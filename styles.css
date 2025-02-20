@@ -1,0 +1,69 @@
+/* Estilos generales */
+body, html {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background-color: #f0f0f0;
+  font-family: Arial, sans-serif;
+}
+
+/* Contenedor del juego */
+#gameContainer {
+  position: relative;
+  width: 90vw;
+  height: 90vh;
+  max-width: 800px;
+  max-height: 600px;
+  border: 2px solid black;
+  background-color: #a8e6cf;
+  overflow: hidden;
+}
+
+/* Torre */
+#tower {
+  position: absolute;
+  width: 40px;
+  height: 60px;
+  background-color: #444;
+  border-radius: 5px;
+  bottom: 50px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+/* Enemigos */
+.enemy {
+  position: absolute;
+  width: 30px;
+  height: 30px;
+  background-color: #ff0000;
+  border-radius: 50%;
+}
+
+/* Proyectiles */
+.projectile {
+  position: absolute;
+  width: 8px;
+  height: 8px;
+  background-color: #000;
+  border-radius: 50%;
+}
+
+/* Marcadores de puntuación y salud */
+#score, #healthBar {
+  position: absolute;
+  right: 10px;
+  font-size: 20px;
+  color: #000;
+}
+
+#score {
+  top: 10px;
+}
+
+#healthBar {
+  top: 40px;
+}
