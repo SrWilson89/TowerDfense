@@ -7,6 +7,8 @@ let powerUps = [];
 let gameLoop;
 const tower = document.getElementById('tower');
 const gameContainer = document.getElementById('gameContainer');
+const powerUpTimer = document.getElementById('powerUpTimer');
+const timerValue = document.getElementById('timerValue');
 
 // Propiedades de la torre
 let towerX = gameContainer.offsetWidth / 2 - 20;
@@ -17,6 +19,10 @@ tower.style.top = towerY + 'px';
 // Propiedades de los power-ups
 let fireRate = 1000; // Velocidad de disparo inicial
 let projectileDamage = 10; // Daño inicial de los proyectiles
+
+// Temporizador de power-up
+let powerUpActive = false;
+let powerUpEndTime = 0;
 
 // Mover la torre con las flechas del teclado
 document.addEventListener('keydown', (e) => {
@@ -150,19 +156,49 @@ function checkPowerUps() {
 
 // Aplicar efectos de power-ups
 function applyPowerUp(type) {
+    powerUpActive = true;
+    powerUpEndTime = Date.now() + 50000; // Duración: 50 segundos
+
     switch (type) {
         case 0: // Velocidad de disparo
             fireRate = 500; // Aumenta la velocidad de disparo
-            setTimeout(() => fireRate = 1000, 5000); // Duración: 5 segundos
+            setTimeout(() => {
+                fireRate = 1000;
+                powerUpActive = false;
+                powerUpTimer.classList.add('hidden');
+            }, 50000);
             break;
         case 1: // Daño mejorado
             projectileDamage = 20; // Aumenta el daño
-            setTimeout(() => projectileDamage = 10, 5000); // Duración: 5 segundos
+            setTimeout(() => {
+                projectileDamage = 10;
+                powerUpActive = false;
+                powerUpTimer.classList.add('hidden');
+            }, 50000);
             break;
         case 2: // Curación
-            health = Math.min(health + 20, 100); // Restaura 20 de salud
+            health = Math.min(health + 40, 100); // Restaura 40 de salud
             document.getElementById('healthBar').textContent = 'Health: ' + health;
+            powerUpActive = false;
             break;
+    }
+
+    if (type !== 2) { // No mostrar temporizador para la curación
+        powerUpTimer.classList.remove('hidden');
+        updateTimer();
+    }
+}
+
+// Actualizar el temporizador visual
+function updateTimer() {
+    if (powerUpActive) {
+        const remainingTime = Math.ceil((powerUpEndTime - Date.now()) / 1000);
+        timerValue.textContent = remainingTime;
+        if (remainingTime > 0) {
+            requestAnimationFrame(updateTimer);
+        } else {
+            powerUpTimer.classList.add('hidden');
+        }
     }
 }
 
