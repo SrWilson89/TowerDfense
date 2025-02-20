@@ -19,6 +19,7 @@ tower.style.top = towerY + 'px';
 // Propiedades de los power-ups
 let fireRate = 1000; // Velocidad de disparo inicial
 let projectileDamage = 10; // Daño inicial de los proyectiles
+let multipleShots = 1; // Número de disparos (1 normal, 3 triple, 5 quíntuple)
 
 // Temporizador de power-up
 let powerUpActive = false;
@@ -66,8 +67,16 @@ function spawnPowerUp() {
     powerUp.className = 'powerUp';
     powerUp.style.top = Math.random() * (gameContainer.offsetHeight - 20) + 'px';
     powerUp.style.left = Math.random() * (gameContainer.offsetWidth - 20) + 'px';
-    const type = Math.floor(Math.random() * 3); // 0: Velocidad, 1: Daño, 2: Curación
-    powerUp.style.backgroundColor = type === 0 ? '#00f' : type === 1 ? '#f00' : '#0f0';
+    const type = Math.floor(Math.random() * 4); // 0: Velocidad, 1: Daño, 2: Curación, 3: Disparo múltiple
+    
+    // Color según el tipo de power-up
+    switch(type) {
+        case 0: powerUp.style.backgroundColor = '#00f'; break; // Azul - Velocidad
+        case 1: powerUp.style.backgroundColor = '#f00'; break; // Rojo - Daño
+        case 2: powerUp.style.backgroundColor = '#0f0'; break; // Verde - Curación
+        case 3: powerUp.style.backgroundColor = '#f0f'; break; // Magenta - Disparo múltiple
+    }
+    
     gameContainer.appendChild(powerUp);
     powerUps.push({
         element: powerUp,
@@ -77,13 +86,90 @@ function spawnPowerUp() {
     });
 }
 
+// Función para crear un proyectil individual
+function createProjectile(angleOffset = 0) {
+    const projectile = document.createElement('div');
+    projectile.className = powerUpActive ? 'projectile powered' : 'projectile';
+    projectile.style.left = (towerX + 30) + 'px';
+    projectile.style.top = (towerY + 20) + 'px';
+    gameContainer.appendChild(projectile);
+    
+    const angle = (angleOffset * Math.PI) / 180;
+    const speed = 5;
+    
+    projectiles.push({
+        element: projectile,
+        x: towerX + 30,
+        y: towerY + 20,
+        damage: projectileDamage,
+        dx: Math.cos(angle) * speed,
+        dy: Math.sin(angle) * speed
+    });
+}
+
+// Disparar proyectiles
+function shoot() {
+    if (multipleShots === 5) {
+        // Disparo quíntuple
+        createProjectile(0);    // Centro
+        createProjectile(-20);  // Arriba lejano
+        createProjectile(-10);  // Arriba cercano
+        createProjectile(10);   // Abajo cercano
+        createProjectile(20);   // Abajo lejano
+    } else if (multipleShots === 3) {
+        // Disparo triple
+        createProjectile(0);    // Centro
+        createProjectile(-15);  // Arriba
+        createProjectile(15);   // Abajo
+    } else {
+        // Disparo normal
+        createProjectile(0);
+    }
+}
+
+// Mover proyectiles y detectar colisiones
+function moveProjectiles() {
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        if (projectiles[i]) {
+            projectiles[i].x += projectiles[i].dx;
+            projectiles[i].y += projectiles[i].dy;
+            projectiles[i].element.style.left = projectiles[i].x + 'px';
+            projectiles[i].element.style.top = projectiles[i].y + 'px';
+
+            // Detectar colisiones con enemigos
+            for (let j = enemies.length - 1; j >= 0; j--) {
+                if (Math.abs(projectiles[i].x - enemies[j].x) < 20 &&
+                    Math.abs(projectiles[i].y - enemies[j].y) < 20) {
+                    enemies[j].element.remove();
+                    enemies.splice(j, 1);
+                    projectiles[i].element.remove();
+                    projectiles.splice(i, 1);
+                    score += 10;
+                    document.getElementById('score').textContent = 'Score: ' + score;
+                    break;
+                }
+            }
+
+            // Eliminar proyectiles que salen del mapa
+            if (projectiles[i] && (
+                projectiles[i].x > gameContainer.offsetWidth ||
+                projectiles[i].x < 0 ||
+                projectiles[i].y > gameContainer.offsetHeight ||
+                projectiles[i].y < 0
+            )) {
+                projectiles[i].element.remove();
+                projectiles.splice(i, 1);
+            }
+        }
+    }
+}
+
 // Mover enemigos
 function moveEnemies() {
     for (let i = enemies.length - 1; i >= 0; i--) {
         enemies[i].x -= enemies[i].speed;
         enemies[i].element.style.left = enemies[i].x + 'px';
 
-        // Si el enemigo llega al final del mapa
         if (enemies[i].x < 0) {
             enemies[i].element.remove();
             enemies.splice(i, 1);
@@ -97,56 +183,11 @@ function moveEnemies() {
     }
 }
 
-// Disparar proyectiles
-function shoot() {
-    const projectile = document.createElement('div');
-    projectile.className = 'projectile';
-    projectile.style.left = (towerX + 20) + 'px';
-    projectile.style.top = (towerY + 30) + 'px';
-    gameContainer.appendChild(projectile);
-    projectiles.push({
-        element: projectile,
-        x: towerX + 20,
-        y: towerY + 30,
-        damage: projectileDamage
-    });
-}
-
-// Mover proyectiles y detectar colisiones
-function moveProjectiles() {
-    for (let i = projectiles.length - 1; i >= 0; i--) {
-        projectiles[i].x += 5;
-        projectiles[i].element.style.left = projectiles[i].x + 'px';
-
-        // Detectar colisiones con enemigos
-        for (let j = enemies.length - 1; j >= 0; j--) {
-            if (Math.abs(projectiles[i].x - enemies[j].x) < 20 &&
-                Math.abs(projectiles[i].y - enemies[j].y) < 20) {
-                // Colisión detectada
-                enemies[j].element.remove();
-                enemies.splice(j, 1);
-                projectiles[i].element.remove();
-                projectiles.splice(i, 1);
-                score += 10;
-                document.getElementById('score').textContent = 'Score: ' + score;
-                break;
-            }
-        }
-
-        // Eliminar proyectiles que salen del mapa
-        if (projectiles[i] && projectiles[i].x > gameContainer.offsetWidth) {
-            projectiles[i].element.remove();
-            projectiles.splice(i, 1);
-        }
-    }
-}
-
 // Verificar colisiones con power-ups
 function checkPowerUps() {
     for (let i = powerUps.length - 1; i >= 0; i--) {
         if (Math.abs(towerX - powerUps[i].x) < 30 &&
             Math.abs(towerY - powerUps[i].y) < 30) {
-            // Aplicar power-up
             applyPowerUp(powerUps[i].type);
             powerUps[i].element.remove();
             powerUps.splice(i, 1);
@@ -157,29 +198,37 @@ function checkPowerUps() {
 // Aplicar efectos de power-ups
 function applyPowerUp(type) {
     powerUpActive = true;
-    powerUpEndTime = Date.now() + 50000; // Duración: 50 segundos
+    powerUpEndTime = Date.now() + 50000; // 50 segundos para todos los power-ups
+    tower.classList.add('powered');
+
+    // Resetear efectos previos
+    const resetEffects = () => {
+        powerUpActive = false;
+        tower.classList.remove('powered');
+        powerUpTimer.classList.add('hidden');
+        fireRate = 1000;
+        projectileDamage = 10;
+        multipleShots = 1;
+    };
 
     switch (type) {
         case 0: // Velocidad de disparo
-            fireRate = 500; // Aumenta la velocidad de disparo
-            setTimeout(() => {
-                fireRate = 1000;
-                powerUpActive = false;
-                powerUpTimer.classList.add('hidden');
-            }, 50000);
+            fireRate = 500;
+            setTimeout(resetEffects, 50000);
             break;
         case 1: // Daño mejorado
-            projectileDamage = 20; // Aumenta el daño
-            setTimeout(() => {
-                projectileDamage = 10;
-                powerUpActive = false;
-                powerUpTimer.classList.add('hidden');
-            }, 50000);
+            projectileDamage = 20;
+            setTimeout(resetEffects, 50000);
             break;
         case 2: // Curación
-            health = Math.min(health + 40, 100); // Restaura 40 de salud
+            health = Math.min(health + 40, 100);
             document.getElementById('healthBar').textContent = 'Health: ' + health;
             powerUpActive = false;
+            tower.classList.remove('powered');
+            break;
+        case 3: // Disparo múltiple (nuevo power-up)
+            multipleShots = Math.random() < 0.5 ? 3 : 5; // 50% probabilidad de triple o quíntuple
+            setTimeout(resetEffects, 50000);
             break;
     }
 
@@ -208,10 +257,6 @@ gameLoop = setInterval(() => {
     moveEnemies();
     moveProjectiles();
     checkPowerUps();
-    if (Math.random() < 0.03) {
-        spawnEnemy();
-    }
-    if (Math.random() < 0.01) {
-        spawnPowerUp();
-    }
+    if (Math.random() < 0.03) spawnEnemy();
+    if (Math.random() < 0.01) spawnPowerUp();
 }, 50);
