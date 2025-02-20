@@ -52,6 +52,21 @@ body, html {
   border-radius: 50%;
 }
 
+/* Power-ups */
+.powerUp {
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  animation: pulse 1s infinite;
+}
+
+@keyframes pulse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
 /* Marcadores de puntuación y salud */
 #score, #healthBar {
   position: absolute;

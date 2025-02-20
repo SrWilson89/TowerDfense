@@ -3,15 +3,20 @@ let score = 0;
 let health = 100;
 let enemies = [];
 let projectiles = [];
+let powerUps = [];
 let gameLoop;
 const tower = document.getElementById('tower');
 const gameContainer = document.getElementById('gameContainer');
 
-// Posición inicial de la torre
+// Propiedades de la torre
 let towerX = gameContainer.offsetWidth / 2 - 20;
 let towerY = gameContainer.offsetHeight - 110;
 tower.style.left = towerX + 'px';
 tower.style.top = towerY + 'px';
+
+// Propiedades de los power-ups
+let fireRate = 1000; // Velocidad de disparo inicial
+let projectileDamage = 10; // Daño inicial de los proyectiles
 
 // Mover la torre con las flechas del teclado
 document.addEventListener('keydown', (e) => {
@@ -49,6 +54,23 @@ function spawnEnemy() {
     });
 }
 
+// Generar power-ups
+function spawnPowerUp() {
+    const powerUp = document.createElement('div');
+    powerUp.className = 'powerUp';
+    powerUp.style.top = Math.random() * (gameContainer.offsetHeight - 20) + 'px';
+    powerUp.style.left = Math.random() * (gameContainer.offsetWidth - 20) + 'px';
+    const type = Math.floor(Math.random() * 3); // 0: Velocidad, 1: Daño, 2: Curación
+    powerUp.style.backgroundColor = type === 0 ? '#00f' : type === 1 ? '#f00' : '#0f0';
+    gameContainer.appendChild(powerUp);
+    powerUps.push({
+        element: powerUp,
+        x: parseInt(powerUp.style.left),
+        y: parseInt(powerUp.style.top),
+        type: type
+    });
+}
+
 // Mover enemigos
 function moveEnemies() {
     for (let i = enemies.length - 1; i >= 0; i--) {
@@ -79,7 +101,8 @@ function shoot() {
     projectiles.push({
         element: projectile,
         x: towerX + 20,
-        y: towerY + 30
+        y: towerY + 30,
+        damage: projectileDamage
     });
 }
 
@@ -112,12 +135,47 @@ function moveProjectiles() {
     }
 }
 
+// Verificar colisiones con power-ups
+function checkPowerUps() {
+    for (let i = powerUps.length - 1; i >= 0; i--) {
+        if (Math.abs(towerX - powerUps[i].x) < 30 &&
+            Math.abs(towerY - powerUps[i].y) < 30) {
+            // Aplicar power-up
+            applyPowerUp(powerUps[i].type);
+            powerUps[i].element.remove();
+            powerUps.splice(i, 1);
+        }
+    }
+}
+
+// Aplicar efectos de power-ups
+function applyPowerUp(type) {
+    switch (type) {
+        case 0: // Velocidad de disparo
+            fireRate = 500; // Aumenta la velocidad de disparo
+            setTimeout(() => fireRate = 1000, 5000); // Duración: 5 segundos
+            break;
+        case 1: // Daño mejorado
+            projectileDamage = 20; // Aumenta el daño
+            setTimeout(() => projectileDamage = 10, 5000); // Duración: 5 segundos
+            break;
+        case 2: // Curación
+            health = Math.min(health + 20, 100); // Restaura 20 de salud
+            document.getElementById('healthBar').textContent = 'Health: ' + health;
+            break;
+    }
+}
+
 // Iniciar el juego
-setInterval(shoot, 1000);
+setInterval(shoot, fireRate);
 gameLoop = setInterval(() => {
     moveEnemies();
     moveProjectiles();
+    checkPowerUps();
     if (Math.random() < 0.03) {
         spawnEnemy();
+    }
+    if (Math.random() < 0.01) {
+        spawnPowerUp();
     }
 }, 50);
